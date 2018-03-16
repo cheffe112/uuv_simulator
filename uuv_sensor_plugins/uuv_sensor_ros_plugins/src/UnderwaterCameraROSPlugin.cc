@@ -173,6 +173,72 @@ void UnderwaterCameraROSPlugin::OnNewImageFrame(const unsigned char *_image,
 }
 
 /////////////////////////////////////////////////
+// see https://en.wikipedia.org/wiki/HSL_and_HSV#From_HSV
+void UnderwaterCameraROSPlugin::HSVtoRGB(float h, float s, float v, float& r, float& g, float& b) {
+  float c = v * s;
+  float hp = h / 60.0;
+  float x = c * (1 - fabs(fmod(hp, 2) - 1));
+  float m = v - c;
+  
+  if(0 <= hp && hp < 1) {
+    r = c;
+    g = x;
+    b = 0;
+  } else if(1 <= hp && hp < 2) {
+    r = x;
+    g = c;
+    b = 0;
+  } else if(2 <= hp && hp < 3) {
+    r = 0;
+    g = c;
+    b = x;
+  } else if(3 <= hp && hp < 4) {
+    r = 0;
+    g = x;
+    b = c;
+  } else if(4 <= hp && hp < 5) {
+    r = x;
+    g = 0;
+    b = c;
+  } else if(5 <= hp && hp < 6) {
+    r = c;
+    g = 0;
+    b = x;
+  } else {
+    r = 0;
+    g = 0;
+    b = 0;
+  }
+  
+  r += m;
+  g += m;
+  b += m;
+}
+
+/////////////////////////////////////////////////
+// dynamic reconfigure for parameters
+void UnderwaterCameraROSPlugin::SetParameters(uuv_sensor_ros_plugins::UnderwaterCameraParametersConfig &config, uint32_t level) {
+    
+    float r,g,b;
+    HSVtoRGB(config.attenuation_h*360.0, config.attenuation_s, config.attenuation_v, r, g, b);
+    this->attenuation[0] = r;
+    this->attenuation[1] = g;
+    this->attenuation[2] = b;
+    this->background[0] = config.background_r;
+    this->background[1] = config.background_g;
+    this->background[2] = config.background_b;
+    
+    // check this first rather than crashing - happens sometimes due to some weird Gazebo race conditions
+    if(this->depthCamera->GetScene() == NULL) {
+        return;
+    }
+    // set scene fog parameters
+    common::Color fogColor(config.fog_color_r, config.fog_color_g, config.fog_color_b, config.fog_color_a);
+    this->depthCamera->GetScene()->SetFog(config.fog_type.c_str(), fogColor, config.fog_density, config.fog_start, config.fog_end);
+    
+}
+
+/////////////////////////////////////////////////
 void UnderwaterCameraROSPlugin::SimulateUnderwater(const cv::Mat& _inputImage,
   const cv::Mat& _inputDepth, cv::Mat& _outputImage)
 {

@@ -19,10 +19,12 @@
 #include <gazebo/gazebo.hh>
 #include <ros/ros.h>
 #include <gazebo/common/Plugin.hh>
+#include <gazebo/rendering/Scene.hh>
 #include <gazebo/plugins/DepthCameraPlugin.hh>
 #include <gazebo_plugins/gazebo_ros_camera_utils.h>
 #include <uuv_sensor_ros_plugins/Common.hh>
 #include <opencv2/opencv.hpp>
+#include <uuv_sensor_ros_plugins/UnderwaterCameraParametersConfig.h>
 
 namespace gazebo
 {
@@ -50,11 +52,17 @@ namespace gazebo
     public: virtual void OnNewImageFrame(const unsigned char* _image,
       unsigned int _width, unsigned int _height,  unsigned int _depth,
       const std::string& _format);
+    
+    /// \brief Callback for camera parameter dynamic reconfigure
+    private: virtual void SetParameters(uuv_sensor_ros_plugins::UnderwaterCameraParametersConfig &config, uint32_t level);
 
     /// \brief Add underwater light damping to image
     protected: virtual void SimulateUnderwater(
      const cv::Mat& _inputImage, const cv::Mat& _inputDepth,
      cv::Mat& _outputImage);
+    
+    /// \brief Convert HSV to RGB values
+    private: virtual void HSVtoRGB(float h, float s, float v, float& r, float& g, float& b);
 
     /// \brief Temporarily store pointer to previous depth image.
     protected: const float * lastDepth;
@@ -70,6 +78,10 @@ namespace gazebo
 
     /// \brief Background constants per channel (RGB)
     protected: unsigned char background[3];
+    
+    /// \brief Dynamic Reconfigure server for the camera parameters
+    private: boost::shared_ptr<dynamic_reconfigure::Server<uuv_sensor_ros_plugins::UnderwaterCameraParametersConfig> > dynamic_reconfigure_server;
+
   };
 }
 

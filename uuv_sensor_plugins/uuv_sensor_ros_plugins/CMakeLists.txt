@@ -17,7 +17,8 @@ find_package(catkin REQUIRED
   uuv_sensor_plugins_ros_msgs
   message_filters
   tf2_ros
-  tf2)
+  tf2
+  dynamic_reconfigure)
 find_package(Eigen3 REQUIRED)
 find_package(gazebo REQUIRED)
 find_package(OGRE REQUIRED)
@@ -56,6 +57,10 @@ list(APPEND UUV_SENSOR_ROS_PLUGINS_LIST uuv_sensor_gazebo_msgs)
 
 file(COPY ${CMAKE_CURRENT_BINARY_DIR}/ DESTINATION ${CATKIN_DEVEL_PREFIX}/include/${PACKAGE_NAME} FILES_MATCHING PATTERN "*.pb.*")
 
+generate_dynamic_reconfigure_options(
+  cfg/UnderwaterCameraParameters.cfg
+)
+
 catkin_package(
   INCLUDE_DIRS include
     ${CMAKE_CURRENT_BINARY_DIR} # for generated messages
@@ -69,6 +74,7 @@ catkin_package(
     uuv_gazebo_plugins
     sensor_msgs
     uuv_sensor_plugins_ros_msgs
+    dynamic_reconfigure
 )
 
 ###########
@@ -88,6 +94,7 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIR}
   ${EIGEN3_INCLUDE_DIR}
+  ${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake
 )
 
 link_directories(
